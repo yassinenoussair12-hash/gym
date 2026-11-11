@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="theme-color" content="#ff5a36"><title>Gym Log</title>
+<style>
+:root{--bg:#f3f4f6;--c:#fff;--t:#14171c;--m:#6b7280;--b:#e3e6ea;--g:#d5d9df;--g2:#bcc2cb;--a:#ff5a36}
+@media(prefers-color-scheme:dark){:root{--bg:#0d0f12;--c:#1a1d23;--t:#f2f3f5;--m:#9aa1ad;--b:#2a2e36;--g:#2f343d;--g2:#444b57}}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font:16px/1.35 system-ui,Roboto,sans-serif;background:var(--bg);color:var(--t);padding-bottom:84px}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--b)}
+.top h1{flex:1;font-size:21px;font-weight:800;letter-spacing:-.3px}
+.pad{padding:12px;display:grid;gap:10px}
+button,select,input{font:inherit;color:inherit}
+button{border:0;background:var(--g);border-radius:12px;padding:9px 13px;font-weight:700}
+.b{background:var(--a);color:#fff}.bk{font-size:22px;padding:2px 12px}
+.card{background:var(--c);border-radius:16px;padding:12px;border:1px solid var(--b)}
+.dc{color:#fff;border:0;padding:16px;display:flex;align-items:center;gap:8px}
+.dc b{font-size:24px;flex:1}.dc small{opacity:.9;display:block;font-weight:500}.dc button{background:#0003;color:#fff;padding:6px 10px}
+.row{display:flex;gap:10px;align-items:center}.g{flex:1;min-width:0}
+.th{width:60px;height:60px;border-radius:12px;object-fit:cover;background:var(--g);flex:none}
+.chip{display:inline-block;color:#fff;border-radius:99px;padding:2px 10px;font-size:13px;font-weight:700;margin:4px 4px 0 0}
+.ctl{display:flex;gap:6px;align-items:center;margin-top:10px}
+.ctl input{width:0;flex:1;min-width:0;text-align:center;font-size:24px;font-weight:800;border:2px solid var(--b);border-radius:12px;padding:6px;background:var(--bg)}
+.ctl .st{font-size:22px;width:48px;padding:8px 0}
+.ctl label{color:var(--m);font-size:14px}.ctl .s{flex:none;width:52px;font-size:18px}
+.ok{background:#22c55e;color:#fff;flex:1}
+.m{color:var(--m);font-size:14px}.x{background:none;color:var(--m);padding:4px 8px}
+.big{width:100%;border-radius:16px;max-height:300px;object-fit:contain;background:#fff}
+.fig{width:100%;max-height:270px}.ch{width:100%}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mg .card{color:#fff;border:0;font-weight:800;font-size:18px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);border-top:1px solid var(--b);padding-bottom:env(safe-area-inset-bottom)}
+nav a{flex:1;text-align:center;padding:9px 0 7px;font-size:12px;color:var(--m);text-decoration:none;font-weight:700}
+nav a span{display:block;font-size:22px}nav a.on{color:var(--a)}
+input[type=text],input[type=search],select{width:100%;border:2px solid var(--b);border-radius:12px;padding:10px;background:var(--bg)}
+summary{font-weight:700}.dots button{width:34px;height:34px;border-radius:50%;padding:0;margin:4px 4px 0 0}
+#t{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#111;color:#fff;padding:9px 16px;border-radius:99px;opacity:0;transition:.2s;pointer-events:none}#t.on{opacity:1}
+h3{margin:6px 0 0;font-size:17px}
+</style></head><body><div id="app"></div><div id="t"></div>
+<nav><a href="#days" data-k="days"><span>📅</span>Days</a><a href="#exs" data-k="exs"><span>🏋️</span>Exercises</a><a href="#mus" data-k="mus"><span>💪</span>Muscles</a><a href="#data" data-k="data"><span>💾</span>Backup</a></nav>
+<script>
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9),enc=encodeURIComponent,go=p=>location.hash=p;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MU=['chest','shoulders','biceps','triceps','forearms','abdominals','lats','middle back','lower back','traps','neck','quadriceps','hamstrings','glutes','calves','adductors','abductors'];
+const R='#ef4444',B='#3b82f6',P='#a855f7',Gr='#22c55e';
+const MC={chest:R,shoulders:'#f97316',biceps:P,triceps:P,forearms:P,abdominals:'#eab308',lats:B,'middle back':B,'lower back':B,traps:B,neck:'#64748b',quadriceps:Gr,hamstrings:Gr,glutes:Gr,calves:Gr,adductors:Gr,abductors:Gr};
+const COL=[R,'#f97316','#eab308',Gr,'#06b6d4',B,P,'#ec4899'];
+const U={kg:['kg',2.5],lbs:['lbs',5],disc:['discs',1]};
+const IMG='https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/';
+const PH='data:image/svg+xml,'+enc('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><text x="5" y="7.5" font-size="7" text-anchor="middle">🏋️</text></svg>');
+let D;try{D=JSON.parse(localStorage.gym)}catch(e){}D=D||{days:[],ex:[],logs:[]};
+const save=()=>{try{localStorage.gym=JSON.stringify(D)}catch(e){alert('Storage full. Export your data.')}};
+const toast=m=>{const t=$('#t');t.textContent=m;t.className='on';setTimeout(()=>t.className='',1400)};
+const exo=id=>D.ex.find(e=>e.id==id),dayo=id=>D.days.find(d=>d.id==id);
+const dt=t=>new Date(t).toLocaleDateString('en',{day:'numeric',month:'short',year:'2-digit'});
+const logs=e=>D.logs.filter(l=>l.e==e).sort((a,b)=>a.t-b.t);
+const last=e=>logs(e).pop(),pr=e=>logs(e).reduce((m,l)=>!m||l.w>m.w?l:m,0);
+const un=e=>U[e.unit][0],photo=e=>e.ph||(e.img&&e.img[0])||PH;
+const im=(e,c='th')=>`<img class="${c}" src="${esc(photo(e))}" onerror="this.src=PH">`;
+const chips=e=>e.mu.map(m=>`<span class="chip" style="background:${MC[m]}" onclick="event.stopPropagation();go('mu/${enc(m)}')">${m}</span>`).join('');
+const hdr=(t,r='',back=1)=>`<div class="top">${back?'<button class="bk" onclick="history.back()">‹</button>':''}<h1>${esc(t)}</h1>${r}</div>`;
+// body figure
+const FR=[['neck','M52 26Q57 28 58 36L53 34Z',1],['shoulders','M58 35C66 32 74 36 75 46C75 51 73 55 71 58C67 52 62 45 58 35Z',1],['chest','M51 37C57 35 63 37 66 41C65 49 59 53 51 52Z',1],['abdominals','M51.5 54h5.5v6h-5.5zM51.5 61h5.5v6h-5.5zM51.5 68h5.5v6h-5.5zM58 55C62 58 63 67 60 77L57.5 75C59.5 67 59.5 60 58 55Z',1],['biceps','M73 56C78 56 80 63 78 71C75 74 72 71 72 65Z',1],['forearms','M72 75C77 74 81 79 82 91C80 99 77 101 75 97C73 91 72 83 72 75Z',1],['quadriceps','M56 83C63 85 66 99 64 119C62 127 56 127 55 119C54 107 54 93 56 83Z',1],['adductors','M51 81L55 83L56 101C53 105 51 101 51 97Z',1],['abductors','M58 79C62 79 64 85 62 93L58 91Z',1],['calves','M56 134C62 134 64 142 62 156C60 166 57 170 55 166C54 156 54 142 56 134Z',1]];
+const BK=[['neck','M45 24h10v7H45Z',0],['lats','M51 63L62 47C68 51 68 63 62 75L51 77Z',1],['shoulders',FR[1][1],1],['triceps','M73 53C79 53 82 63 80 75C77 79 73 75 72 67Z',1],['forearms',FR[5][1],1],['glutes','M50 83C58 79 66 83 66 93C64 101 56 101 50 97Z',1],['hamstrings','M52 101C60 101 65 105 64 121C62 129 56 129 54 121C53 113 52 107 52 101Z',1],['calves','M55 132C62 130 65 140 63 152C61 162 57 164 55 160C53 150 53 140 55 132Z',1],['traps','M50 25L58 30C66 34 66 38 62 46L50 60L38 46C34 38 34 34 42 30Z',0],['middle back','M51 50L57 52L57 62L51 64Z',1],['lower back','M42 68L58 68L56 82L50 84L44 82Z',0]];
+function fig(p=[],s=[]){const mir='transform="matrix(-1 0 0 1 100 0)"',
+sh=(d,f,t)=>`<path d="${d}" fill="${f}" stroke="var(--c)" stroke-width=".5" ${t}/><path d="${d}" fill="url(#fb)" ${t}/><path d="${d}" fill="url(#sh)" ${t}/>`,
+bs=`<path d="M51 80h14l-2 92h-10zM70 40l12 4 1 58h-12z"/>`,
+v=(L,x,n)=>`<g transform="translate(${x} 0)"><g fill="var(--g)"><ellipse cx="50" cy="14" rx="9" ry="11"/><path d="M30 36L70 36L67 84L33 84Z"/>${bs}<g ${mir}>${bs}</g></g>`+L.map(([m,d,k])=>{const f=p.includes(m)?MC[m]:s.includes(m)?MC[m]+'88':'var(--g2)';return `<g${p.includes(m)?' filter="url(#gl)"':''}>`+sh(d,f,'')+(k?sh(d,f,mir):'')+'</g>'}).join('')+`<text x="50" y="189" font-size="7" text-anchor="middle" fill="var(--m)">${n}</text></g>`;
+return `<svg class="fig" viewBox="0 0 200 192"><defs><pattern id="fb" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(75)"><line x2="0" y2="2.4" stroke="#000" stroke-opacity=".2" stroke-width=".5"/></pattern><linearGradient id="sh" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".32"/></linearGradient><filter id="gl" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="1.3" flood-opacity=".6"/></filter></defs>${v(FR,0,'FRONT')}${v(BK,100,'BACK')}</svg>`}
+// chart
+function chart(S){const a=S.flatMap(s=>s.p);if(!a.length)return'<p class="m">No weights logged yet.</p>';
+const t0=Math.min(...a.map(p=>p.t)),t1=Math.max(...a.map(p=>p.t)),w0=Math.min(...a.map(p=>p.w)),w1=Math.max(...a.map(p=>p.w));
+const X=t=>t1==t0?170:35+(t-t0)/(t1-t0)*270,Y=w=>w1==w0?70:120-(w-w0)/(w1-w0)*95;
+return `<svg class="ch" viewBox="0 0 330 150"><g stroke="var(--b)"><line x1="30" x2="325" y1="25" y2="25"/><line x1="30" x2="325" y1="120" y2="120"/></g><g font-size="9" fill="var(--m)"><text x="0" y="28">${w1}</text><text x="0" y="123">${w0}</text><text x="30" y="140">${dt(t0)}</text><text x="325" y="140" text-anchor="end">${dt(t1)}</text></g>`+S.map((s,i)=>`<polyline fill="none" stroke="${COL[i%8]}" stroke-width="2.5" points="${s.p.map(p=>X(p.t)+','+Y(p.w)).join(' ')}"/>`+s.p.map(p=>`<circle cx="${X(p.t)}" cy="${Y(p.w)}" r="3.5" fill="${COL[i%8]}"/>`).join('')).join('')+'</svg>'+(S.length>1?S.map((s,i)=>`<span class="chip" style="background:${COL[i%8]}">${esc(s.n)}</span>`).join(''):'')}
+const hist=L=>L.slice().sort((a,b)=>b.t-a.t).slice(0,60).map(l=>{const e=exo(l.e),d=dayo(l.d);return e?`<div class="row m" style="padding:4px 0;border-top:1px solid var(--b)"><span style="width:62px">${dt(l.t)}</span><span class="g"><b style="color:var(--t)">${esc(e.name)}</b> ${l.w} ${un(e)} · ${l.s}×${l.r}${d?' · '+esc(d.name):''}</span><button class="x" onclick="delLog('${l.t}')">✕</button></div>`:''}).join('');
+function delLog(t){if(confirm('Delete this entry?')){D.logs=D.logs.filter(l=>l.t!=t);save();render(1)}}
+// views
+function vDays(){return hdr('Training days','<button class="b" onclick="addDay()">+ Day</button>',0)+'<div class="pad">'+(D.days.map((d,i)=>{const L=D.logs.filter(l=>l.d==d.id).sort((a,b)=>b.t-a.t)[0];return `<div class="card dc" style="background:${d.color}" onclick="go('day/${d.id}')"><div class="g"><b>${esc(d.name)}</b><small>${d.ex.length} exercises${L?' · last '+dt(L.t):''}</small></div><button onclick="event.stopPropagation();mv(${i},-1)">▲</button><button onclick="event.stopPropagation();mv(${i},1)">▼</button></div>`}).join('')||'<p class="m">No days yet. Tap “+ Day” and name it (Pull, Legs, Arms…).</p>')+'</div>'}
+function addDay(){const n=(prompt('Day name (Pull, Legs, Arms…)')||'').trim();if(!n)return;const d={id:uid(),name:n,color:COL[D.days.length%8],ex:[]};D.days.push(d);save();go('day/'+d.id)}
+function mv(i,k){const j=i+k;if(j<0||j>=D.days.length)return;[D.days[i],D.days[j]]=[D.days[j],D.days[i]];save();render(1)}
+function vDay(id){const d=dayo(id);if(!d)return vDays();
+const rows=d.ex.map((r,i)=>{const e=exo(r.e);if(!e)return'';const l=last(e.id),p=pr(e.id);return `<div class="card" style="border-left:8px solid ${d.color}"><div class="row" onclick="go('ex/${e.id}')">${im(e)}<div class="g"><b style="font-size:18px">${esc(e.name)}</b><br>${chips(e)}</div><button class="x" onclick="event.stopPropagation();rmEx('${d.id}',${i})">✕</button></div>
+<div class="ctl"><button class="st" onclick="adj(${i},-1,'${e.id}')">−</button><input id="w${i}" type="number" inputmode="decimal" step="any" value="${l?l.w:''}" placeholder="0"><b>${un(e)}</b><button class="st" onclick="adj(${i},1,'${e.id}')">+</button></div>
+<div class="ctl"><label>Sets</label><input class="s" id="s${i}" type="number" inputmode="numeric" value="${r.s}"><label>Reps</label><input class="s" id="r${i}" type="number" inputmode="numeric" value="${r.r}"><button class="ok" onclick="logIt('${d.id}',${i})">✓ Save</button></div>
+<p class="m" style="margin-top:6px">${l?`Last ${l.w} ${un(e)} · ${l.s}×${l.r} · ${dt(l.t)}`:'No weight yet'}${p?` · PR ${p.w} ${un(e)}`:''}</p></div>`}).join('');
+const H=D.logs.filter(l=>l.d==id);
+return hdr(d.name,`<button class="b" onclick="go('pick/${id}')">+ Exercise</button>`)+`<div class="pad" style="--a:${d.color}">${rows||'<p class="m">Empty day. Tap “+ Exercise”.</p>'}
+<div class="card"><h3>History</h3>${hist(H)||'<p class="m">Nothing yet.</p>'}</div>
+<details class="card"><summary>Edit day</summary><p style="margin-top:8px"><input type="text" value="${esc(d.name)}" onchange="dayo('${id}').name=this.value.trim()||'Day';save();render(1)"></p><div class="dots">${COL.map(c=>`<button style="background:${c}" onclick="dayo('${id}').color='${c}';save();render(1)">${c==d.color?'✓':''}</button>`).join('')}</div><p><button style="margin-top:10px;background:#ef4444;color:#fff" onclick="delDay('${id}')">Delete day (weights are kept)</button></p></details></div>`}
+const gv=(i,k)=>+($('#'+k+i).value);
+function adj(i,k,eid){const e=exo(eid),el=$('#w'+i);el.value=Math.max(0,+((+el.value||0)+k*U[e.unit][1]).toFixed(2))}
+function logIt(did,i){const d=dayo(did),r=d.ex[i],w=gv(i,'w');if(isNaN(w)||$('#w'+i).value==='')return toast('Enter a weight');r.s=gv(i,'s')||2;r.r=gv(i,'r')||10;D.logs.push({e:r.e,d:did,t:Date.now(),w,s:r.s,r:r.r});save();const y=scrollY;render(1);scrollTo(0,y);toast('Saved')}
+function rmEx(did,i){if(confirm('Remove from this day? Weights are kept.')){dayo(did).ex.splice(i,1);save();render(1)}}
+function delDay(id){if(confirm('Delete this day?')){D.days=D.days.filter(d=>d.id!=id);save();go('days')}}
+function addTo(did,eid){if(!did)return;const d=dayo(did);if(!d.ex.some(r=>r.e==eid))d.ex.push({e:eid,s:2,r:10});save();toast('Added to '+d.name);render(1)}
+function vPick(id){const d=dayo(id),l=D.ex.filter(e=>!d.ex.some(r=>r.e==e.id));return hdr('Add to '+d.name,`<button class="b" onclick="go('new/${id}')">+ New</button>`)+'<div class="pad">'+(l.map(e=>`<div class="card row" onclick="addTo('${id}','${e.id}');history.back()">${im(e)}<div class="g"><b>${esc(e.name)}</b><br>${chips(e)}</div></div>`).join('')||'<p class="m">No other exercises. Tap “+ New”.</p>')+'</div>'}
+function vExs(){return hdr('Exercises','<button class="b" onclick="go(\'new/-\')">+ New</button>',0)+'<div class="pad">'+(D.ex.map(e=>{const l=last(e.id);return `<div class="card row" onclick="go('ex/${e.id}')">${im(e)}<div class="g"><b>${esc(e.name)}</b><br>${chips(e)}</div><span class="m">${l?l.w+' '+un(e):''}</span></div>`}).join('')||'<p class="m">No exercises yet. Tap “+ New”.</p>')+'</div>'}
+function vEx(id){const e=exo(id);if(!e)return vExs();const p=pr(id),l=last(id),free=D.days.filter(d=>!d.ex.some(r=>r.e==id));
+return hdr(e.name)+`<div class="pad"><img class="big" id="bi" src="${esc(photo(e))}" onerror="this.src=PH" ${e.img&&e.img[1]?`onclick="this.dataset.i^=1;this.src=this.dataset.i==1?'${esc(e.img[1])}':'${esc(e.img[0])}'" data-i="0"`:''}>
+<div class="card">${fig(e.mu,e.mu2)}<div>${chips(e)}${(e.mu2||[]).map(m=>`<span class="chip" style="background:${MC[m]}88;color:var(--t)" onclick="go('mu/${enc(m)}')">${m}</span>`).join('')}</div></div>
+<div class="card"><div class="row"><div class="g"><span class="m">Last</span><br><b style="font-size:22px">${l?l.w+' '+un(e):'—'}</b></div><div class="g"><span class="m">Record</span><br><b style="font-size:22px">${p?p.w+' '+un(e):'—'}</b></div></div></div>
+<div class="card"><h3>Progress</h3>${chart([{n:e.name,p:logs(id)}])}</div>
+<div class="card"><h3>History</h3>${hist(logs(id))||'<p class="m">Nothing yet.</p>'}</div>
+${e.ins&&e.ins.length?`<details class="card"><summary>How to do it</summary><ol style="padding-left:20px">${e.ins.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></details>`:''}
+<div class="card"><p class="m">Unit</p><select onchange="exo('${id}').unit=this.value;save();render(1)">${Object.keys(U).map(k=>`<option value="${k}" ${k==e.unit?'selected':''}>${U[k][0]}</option>`).join('')}</select>
+<p class="m" style="margin-top:8px">Name</p><input type="text" value="${esc(e.name)}" onchange="exo('${id}').name=this.value.trim()||'Exercise';save();render(1)">
+${free.length?`<p class="m" style="margin-top:8px">Add to a day</p><select onchange="addTo(this.value,'${id}')"><option value="">Choose…</option>${free.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')}</select>`:''}
+<p><button style="margin-top:10px;background:#ef4444;color:#fff" onclick="delEx('${id}')">Delete exercise and its history</button></p></div></div>`}
+function delEx(id){if(confirm('Delete this exercise and all its weights?')){D.ex=D.ex.filter(e=>e.id!=id);D.logs=D.logs.filter(l=>l.e!=id);D.days.forEach(d=>d.ex=d.ex.filter(r=>r.e!=id));save();go('exs')}}
+function vMus(){return hdr('Muscles','',0)+'<div class="pad mg">'+MU.map(m=>`<div class="card" style="background:${MC[m]}" onclick="go('mu/${enc(m)}')">${m}<br><small style="font-weight:500">${D.ex.filter(e=>e.mu.includes(m)).length} exercises</small></div>`).join('')+'</div>'}
+function vMu(m){const E=D.ex.filter(e=>e.mu.includes(m)),E2=D.ex.filter(e=>!e.mu.includes(m)&&(e.mu2||[]).includes(m));
+return hdr(m)+`<div class="pad"><div class="card">${fig([m])}</div><div class="card"><h3>Progress</h3>${chart(E.map(e=>({n:e.name,p:logs(e.id)})))}</div>
+<div class="card"><h3>Exercises</h3>${E.map(e=>{const p=pr(e.id);return `<div class="row" style="padding:6px 0" onclick="go('ex/${e.id}')">${im(e)}<div class="g"><b>${esc(e.name)}</b><br><span class="m">${p?'PR '+p.w+' '+un(e):'No weight yet'}</span></div></div>`}).join('')||'<p class="m">None yet.</p>'}${E2.length?'<p class="m">Also works it: '+E2.map(e=>esc(e.name)).join(', ')+'</p>':''}</div>
+<div class="card"><h3>History</h3>${hist(D.logs.filter(l=>E.some(e=>e.id==l.e)))||'<p class="m">Nothing yet.</p>'}</div></div>`}
+// new exercise
+let Dr={},FL=[],DB;
+async function ldb(){if(!DB){try{DB=await(await fetch(IMG+'dist/exercises.json')).json()}catch(e){DB=[]}}return DB}
+function vNew(did){Dr={};return hdr('New exercise')+`<div class="pad"><div class="card"><p class="m">Find it in the exercise database (photos included)</p><input type="search" id="q" placeholder="e.g. lat pulldown, leg press…" oninput="srch(this.value)"><div id="res"></div></div>
+<div class="card"><div class="row"><img class="th" id="pv" src="${PH}"><div class="g"><input type="text" id="nn" placeholder="Name"></div></div>
+<p class="m" style="margin-top:8px">Main muscle</p><select id="nm">${MU.map(m=>`<option>${m}</option>`).join('')}</select>
+<p class="m" style="margin-top:8px">Unit</p><select id="nu">${Object.keys(U).map(k=>`<option value="${k}">${U[k][0]}</option>`).join('')}</select>
+<p class="m" style="margin-top:8px">Or use your own photo</p><input type="file" accept="image/*" onchange="own(this)">
+<p><button class="b" style="margin-top:12px;width:100%" onclick="saveNew('${did}')">Save exercise</button></p></div></div>`}
+async function srch(q){const r=$('#res');q=q.toLowerCase().trim();if(q.length<2){r.innerHTML='';return}r.innerHTML='<p class="m">Searching…</p>';const db=await ldb();if(!db.length){r.innerHTML='<p class="m">Database unavailable (no internet). Fill the fields below.</p>';return}
+const w=q.split(/\s+/);FL=db.filter(x=>w.every(k=>x.name.toLowerCase().includes(k))).slice(0,15);
+r.innerHTML=FL.map((x,i)=>`<div class="row" style="padding:6px 0" onclick="pickDB(${i})"><img class="th" loading="lazy" src="${IMG}exercises/${x.images[0]}" onerror="this.src=PH"><div class="g"><b>${esc(x.name)}</b><br><span class="m">${(x.primaryMuscles||[]).join(', ')}</span></div></div>`).join('')||'<p class="m">No match. Fill the fields below.</p>'}
+function pickDB(i){const x=FL[i];Dr={mu:x.primaryMuscles||[],mu2:x.secondaryMuscles||[],img:(x.images||[]).map(p=>IMG+'exercises/'+p),ins:x.instructions||[],ph:''};$('#nn').value=x.name;if(MU.includes(Dr.mu[0]))$('#nm').value=Dr.mu[0];$('#pv').src=Dr.img[0]||PH;$('#res').innerHTML='<p class="m">✓ Selected. Check the fields, then save.</p>'}
+function own(f){const fl=f.files[0];if(!fl)return;const i=new Image();i.onload=()=>{const k=Math.min(1,400/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);Dr.ph=c.toDataURL('image/jpeg',.8);$('#pv').src=Dr.ph};i.src=URL.createObjectURL(fl)}
+function saveNew(did){const n=$('#nn').value.trim();if(!n)return toast('Enter a name');const m=$('#nm').value,e={id:uid(),name:n,unit:$('#nu').value,mu:[m],mu2:(Dr.mu||[]).concat(Dr.mu2||[]).filter(x=>x!=m&&MU.includes(x)),img:Dr.img||[],ins:Dr.ins||[],ph:Dr.ph||''};D.ex.push(e);if(did!='-')dayo(did).ex.push({e:e.id,s:2,r:10});save();toast('Saved');history.back()}
+// backup
+function vData(){return hdr('Backup','',0)+`<div class="pad"><div class="card"><p>Your data lives in this browser only. Export a backup now and then.</p><p><button class="b" style="margin-top:10px" onclick="exp()">Export backup</button></p></div><div class="card"><p class="m">Restore from a backup file</p><input type="file" accept=".json" onchange="imp(this)"></div></div>`}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='gym-log-'+new Date().toISOString().slice(0,10)+'.json';a.click()}
+function imp(f){const fl=f.files[0];if(!fl)return;fl.text().then(t=>{try{const x=JSON.parse(t);if(!x.days||!x.ex||!x.logs)throw 0;if(confirm('Replace current data?')){D=x;save();go('days');toast('Restored')}}catch(e){toast('Invalid file')}})}
+function render(keep){const h=location.hash.slice(1).split('/').map(decodeURIComponent),p=h[0]||'days',V={days:vDays,day:vDay,ex:vEx,mu:vMu,exs:vExs,mus:vMus,data:vData,pick:vPick,new:vNew};$('#app').innerHTML=(V[p]||vDays)(h[1]);const k={day:'days',pick:'days',ex:'exs',new:'exs',mu:'mus'}[p]||p;document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.k==k));if(keep!==1)scrollTo(0,0)}
+onhashchange=render;render();
+</script></body></html>
